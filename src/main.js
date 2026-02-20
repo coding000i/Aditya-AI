@@ -393,7 +393,7 @@ async function sendMessage() {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${apiKey}`,
                 "HTTP-Referer": window.location.href,
-                "X-Title": "Nexus AI Premium"
+                "X-Title": "AdityaDev AI Premium"
             },
             body: JSON.stringify({
                 model: modelId,
