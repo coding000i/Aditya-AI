@@ -239,16 +239,14 @@ window.saveApiKey = function() {
     }
 }
 
+// Factory Reset Function
 window.resetApp = function() {
-    if (confirm('BAHAYA: Ini akan menghapus SEMUA data termasuk API Key, riwayat chat, dan pengaturan lainnya secara permanen. Lanjutkan?')) {
-        localStorage.removeItem("nexus_api_key");
-        localStorage.removeItem("nexus_model_id");
-        localStorage.removeItem("nexus_chat_history");
-        
-        // Optional: clear everything to be sure
-        // localStorage.clear(); 
-        
-        location.reload();
+    console.log("Reset App Triggered");
+    const confirmReset = confirm('PERINGATAN: Ini akan menghapus SEMUA data termasuk API Key, riwayat chat, dan pengaturan lainnya secara permanen.\n\nLanjutkan reset total?');
+    
+    if (confirmReset) {
+        localStorage.clear(); // Hapus semua data di domain ini
+        window.location.reload(true); // Paksa reload dari server
     }
 }
 
