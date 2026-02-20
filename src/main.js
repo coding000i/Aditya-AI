@@ -239,14 +239,27 @@ window.saveApiKey = function() {
     }
 }
 
+window.resetApp = function() {
+    if (confirm('BAHAYA: Ini akan menghapus SEMUA data termasuk API Key, riwayat chat, dan pengaturan lainnya secara permanen. Lanjutkan?')) {
+        localStorage.removeItem("nexus_api_key");
+        localStorage.removeItem("nexus_model_id");
+        localStorage.removeItem("nexus_chat_history");
+        
+        // Optional: clear everything to be sure
+        // localStorage.clear(); 
+        
+        location.reload();
+    }
+}
+
 window.clearChat = function() {
-    if (confirm('Are you sure you want to clear the conversation?')) {
+    if (confirm('Hapus semua riwayat percakapan?')) {
         chatHistory = [];
         localStorage.removeItem('nexus_chat_history');
         chatMessages.innerHTML = `
             <div id="welcome-message" class="flex flex-col items-center justify-center h-full text-center space-y-4 max-w-md mx-auto animate-fade-in">
                 <div class="w-16 h-16 bg-blue-600/20 rounded-2xl flex items-center justify-center mb-2">
-                    <i data-lucide="code" class="text-blue-500 w-8 h-8"></i>
+                    <i data-lucide="sparkles" class="text-blue-500 w-8 h-8"></i>
                 </div>
                 <h3 class="text-2xl font-bold">Halo! Saya AdityaDev</h3>
                 <p class="text-slate-400 text-sm leading-relaxed">Saya adalah asisten Full Stack Web Developer premium Anda. Siap membantu coding, pembuatan website, dan pemecahan masalah teknis.</p>
