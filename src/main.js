@@ -31,8 +31,13 @@ const modelResults = document.getElementById("model-results");
 const modelResultsList = document.getElementById("model-results-list");
 const modelSearchContainer = document.getElementById("model-search-container");
 
+const modalModelResults = document.getElementById("modal-model-results");
+const modalModelResultsList = document.getElementById("modal-model-results-list");
+const modalModelSearchContainer = document.getElementById("modal-model-search-container");
+
 let availableModels = [];
 let isFetchingModels = false;
+let currentSearchContext = 'sidebar';
 
 // Initialize
 if (!apiKey) {
@@ -62,9 +67,15 @@ window.toggleModelSearch = function() {
     }
 }
 
-async function fetchModels() {
-    if (availableModels.length > 0 || isFetchingModels) return;
+async function fetchModels(context = 'sidebar') {
+    if (availableModels.length > 0) {
+        renderModelResults(availableModels, context);
+        return;
+    }
+    if (isFetchingModels) return;
+    
     isFetchingModels = true;
+    const targetList = context === 'modal' ? modalModelResultsList : modelResultsList;
     
     try {
         const response = await fetch("https://openrouter.ai/api/v1/models");
@@ -79,49 +90,61 @@ async function fetchModels() {
                 provider: m.id.split('/')[0]
             }));
             
-        renderModelResults(availableModels);
+        renderModelResults(availableModels, context);
     } catch (error) {
         console.error("Failed to fetch models:", error);
-        modelResultsList.innerHTML = '<div class="p-4 text-center text-xs text-red-400">Failed to load models. Pulihkan koneksi Anda.</div>';
+        targetList.innerHTML = '<div class="p-4 text-center text-xs text-red-400">Failed to load models. Pulihkan koneksi Anda.</div>';
     } finally {
         isFetchingModels = false;
     }
 }
 
-window.showModelResults = function() {
-    modelResults.classList.remove('hidden');
-    fetchModels();
+window.showModelResults = function(context = 'sidebar') {
+    currentSearchContext = context;
+    if (context === 'modal') {
+        modalModelResults.classList.remove('hidden');
+    } else {
+        modelResults.classList.remove('hidden');
+    }
+    fetchModels(context);
 }
 
-window.filterModels = function(query) {
+window.filterModels = function(query, context = 'sidebar') {
     const filtered = availableModels.filter(m => 
         m.name.toLowerCase().includes(query.toLowerCase()) || 
         m.id.toLowerCase().includes(query.toLowerCase())
     );
-    renderModelResults(filtered);
+    renderModelResults(filtered, context);
 }
 
-function renderModelResults(models) {
+function renderModelResults(models, context = 'sidebar') {
+    const targetList = context === 'modal' ? modalModelResultsList : modelResultsList;
+    
     if (models.length === 0) {
-        modelResultsList.innerHTML = '<div class="p-4 text-center text-xs text-slate-500">No models found</div>';
+        targetList.innerHTML = '<div class="p-4 text-center text-xs text-slate-500">No models found</div>';
         return;
     }
     
-    modelResultsList.innerHTML = models.slice(0, 50).map(m => `
-        <div onclick="selectModel('${m.id}')" class="p-3 hover:bg-white/5 cursor-pointer flex flex-col gap-0.5 border-b border-white/5 transition-colors group">
+    targetList.innerHTML = models.slice(0, 50).map(m => `
+        <div onclick="selectModel('${m.id}', '${context}')" class="p-3 hover:bg-white/5 cursor-pointer flex flex-col gap-0.5 border-b border-white/5 transition-colors group">
             <span class="text-xs font-medium text-slate-200 group-hover:text-blue-400 transition-colors">${m.name}</span>
             <span class="text-[10px] text-slate-500 truncate">${m.id}</span>
         </div>
     `).join('');
 }
 
-window.selectModel = function(id) {
+window.selectModel = function(id, context = 'sidebar') {
     modelId = id;
     localStorage.setItem("nexus_model_id", id);
     if (modelIdInput) modelIdInput.value = id;
     if (modelDisplay) modelDisplay.textContent = id;
-    modelResults.classList.add('hidden');
-    modelSearchInput.value = "";
+    
+    if (context === 'modal') {
+        modalModelResults.classList.add('hidden');
+    } else {
+        modelResults.classList.add('hidden');
+        modelSearchInput.value = "";
+    }
     
     // Add a system message about model change
     addMessage("system", `Model changed to: ${id}`, false);
@@ -129,8 +152,11 @@ window.selectModel = function(id) {
 
 // Close results when clicking outside
 document.addEventListener('click', (e) => {
-    if (!modelSearchContainer.contains(e.target)) {
+    if (modelSearchContainer && !modelSearchContainer.contains(e.target)) {
         modelResults.classList.add('hidden');
+    }
+    if (modalModelSearchContainer && !modalModelSearchContainer.contains(e.target)) {
+        modalModelResults.classList.add('hidden');
     }
 });
 function autoResize(textarea) {
