@@ -312,17 +312,54 @@ function addMessage(role, content, saveToHistory = true) {
 }
 
 function formatContent(content) {
-  // Basic formatting: newlines to <br>, simple code blocks
-  return content
-    .replace(/\n/g, "<br>")
-    .replace(
-      /```([\s\S]*?)```/g,
-      '<pre class="bg-black/30 p-3 rounded-lg my-2 font-mono text-xs overflow-x-auto border border-white/10">$1</pre>',
-    )
-    .replace(
-      /`([^`]+)`/g,
-      '<code class="bg-white/10 px-1 rounded font-mono">$1</code>',
-    );
+    // Helper to escape HTML to prevent AI code from breaking the UI
+    const escapeHtml = (text) => {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    };
+
+    const codeBlocks = [];
+    // 1. Extract and protect code blocks
+    let formatted = content.replace(/```([\s\S]*?)```/g, (match, p1) => {
+        const id = `__CODE_BLOCK_${codeBlocks.length}__`;
+        // Detect language or first line
+        const lines = p1.trim().split('\n');
+        let lang = "";
+        let finalCode = p1.trim();
+        
+        if (lines.length > 0 && lines[0].length < 20 && !lines[0].includes(' ') && lines[0].match(/^[a-zA-Z0-9]+$/)) {
+            lang = lines[0];
+            finalCode = lines.slice(1).join('\n').trim();
+        }
+
+        const block = `
+            <div class="my-4 rounded-xl overflow-hidden border border-white/10 bg-black/40">
+                ${lang ? `<div class="bg-white/5 px-4 py-1.5 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-white/5 flex justify-between items-center">
+                    <span>${lang}</span>
+                    <span class="text-[9px] opacity-50">AdityaDev Code</span>
+                </div>` : ''}
+                <pre class="p-4 font-mono text-[11px] leading-relaxed overflow-x-auto scrollbar-thin whitespace-pre text-left text-blue-100"><code>${escapeHtml(finalCode)}</code></pre>
+            </div>`;
+        
+        codeBlocks.push(block);
+        return id;
+    });
+
+    // 2. Escape HTML for the non-code text
+    formatted = escapeHtml(formatted);
+
+    // 3. Simple Markdown features for text
+    formatted = formatted
+        .replace(/`([^`]+)`/g, '<code class="bg-white/10 px-1.5 py-0.5 rounded font-mono text-blue-400 text-xs">$1</code>')
+        .replace(/\n/g, '<br>');
+
+    // 4. Restore code blocks
+    codeBlocks.forEach((block, i) => {
+        formatted = formatted.replace(`__CODE_BLOCK_${i}__`, block);
+    });
+
+    return formatted;
 }
 
 // File Handling
